@@ -11,52 +11,87 @@ namespace CarDeliveryTruck.Client
     public class ClientMain : BaseScript
     {
         public List<Vehicle> VehiclesInTask { get; set; } = new List<Vehicle>();
+        public Vector3 From = new Vector3(2133.2f, 4783.3f, 40.9f);
+        public Vector3 To = new Vector3(2133.2f, 4783.3f, 40.9f);
+
         public ClientMain()
         {
             Debug.WriteLine("Hi from CarDeliveryTruck.Client!");
+
+
+            EventHandlers["onClientResourceStart"] += new Action<string>(async (resourceName) =>
+            {
+                if (GetCurrentResourceName() == resourceName)
+                {
+                    RegisterCommand("opendoor", new Action<int, List<object>, string>((source, args, raw) =>
+                    {
+                        VehiclesInTask.ForEach(x => x.Doors[VehicleDoorIndex.Hood].Open());
+                    }), false);
+
+                    RegisterCommand("truck", new Action<int, List<object>, string>( async (source, args, raw) =>
+                    {
+                        var vehicles = await SpawnTruck(args.Count > 0 ? args[0]?.ToString() : "");
+                        var driver = await World.CreatePed(PedHash.PrologueHostage01, vehicles.Key.Position, vehicles.Key.Heading);
+                        driver.SetIntoVehicle(vehicles.Key, VehicleSeat.Driver);
+                        if (GetWaypointCoords(out Vector3 coords))
+                        {
+                            TaskVehicleDriveToCoordLongrange(driver.Handle, vehicles.Key.Handle, coords.X, coords.Y, coords.Z, 10, 1, 30);
+                            VehiclesInTask.Add(vehicles.Key);
+
+                            var blip = AddBlipForEntity(vehicles.Key.Handle);
+                            SetBlipDisplay(blip, (int)BlipSprite.GarbageTruck);
+                            SetBlipFriend(blip, true);
+                        }
+                    }), false);
+
+                    RegisterCommand("clsvehicles", new Action<int, List<object>, string>(async (source, args, raw) =>
+                    {
+                        VehiclesInTask = new List<Vehicle>();
+                        World.GetAllVehicles().Where(x => Vector3.Distance(x.Position, Game.PlayerPed.Position) < 100).ToList().ForEach((Vehicle vehicle) => 
+                        {
+                            int veh = vehicle.Handle;
+                            DeleteVehicle(ref veh);
+                        });
+                    }), false);
+                }
+            });
         }
 
         [Tick]
         public async Task OnTick()
         {
-            if(IsControlJustPressed(0, (int)Control.Pickup))
-            {
-                var v = await SpawnTruck();
-                var driver = await World.CreatePed(PedHash.Abigail, v.Key.Position, v.Key.Heading);
-                driver.SetIntoVehicle(v.Key, VehicleSeat.Driver);
-
-                if(GetWaypointCoords(out Vector3 coords))
-                {
-                    TaskVehicleDriveToCoordLongrange(driver.Handle, v.Key.Handle, coords.X, coords.Y, coords.Z, 10, 1, 30);
-                    VehiclesInTask.Add(v.Key);
-
-                    var blip = AddBlipForEntity(v.Key.Handle);
-                    SetBlipFriend(blip, true);
-                }
-            }
-
             if(VehiclesInTask.Any())
             {
                 if(GetWaypointCoords(out Vector3 coords))
                 {
                     foreach (var vehicle in VehiclesInTask)
                     {
-                        if(Vector3.Distance(coords, vehicle.Position) < 10)
+                        Debug.WriteLine($"Waypoint Coords: X: {coords.X} Y: {coords.Y} Z: {coords.Z}");
+                        Debug.WriteLine($"Vehicle Coords: X: {vehicle.Position.X} Y: {vehicle.Position.Y} Z: {vehicle.Position.Z}");
+                        Debug.WriteLine($"Distance: {GetDistance(coords, vehicle.Position)}");
+                        
+                        if (GetDistance(coords, vehicle.Position) <= 51)
                         {
+                            Debug.WriteLine("Before Delete entity");
                             int en = vehicle.Handle;
                             DeleteVehicle(ref en);
-                            Debug.WriteLine("Delete entity");
+                            Debug.WriteLine("After Delete entity");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"distance no more then 10");
                         }
                     }
                 }
             }
         }
 
-        public async Task<KeyValuePair<Vehicle, Vehicle>> SpawnTruck()
+        public async Task<KeyValuePair<Vehicle, Vehicle>> SpawnTruck(string name = null)
         {
-            var veh = await World.CreateVehicle(new Model(VehicleHash.Flatbed), Game.PlayerPed.Position + new Vector3(5, 0, 0), Game.PlayerPed.Heading);
+            Model model = string.IsNullOrEmpty(name) ? new Model(VehicleHash.Flatbed) : name;
+            var veh = await World.CreateVehicle(model, Game.PlayerPed.Position + new Vector3(5, 0, 0), Game.PlayerPed.Heading);
             var veh2 = await World.CreateVehicle(new Model(VehicleHash.Adder), Game.PlayerPed.Position + new Vector3(10, 0, 0), Game.PlayerPed.Heading);
-            // veh2.AttachTo(veh, new Vector3(0, -2, 1));
+            veh2.AttachTo(veh, new Vector3(0, -2, 1));
             return new KeyValuePair<Vehicle, Vehicle>(veh, veh2);
         }
 
@@ -66,5 +101,7 @@ namespace CarDeliveryTruck.Client
             coords = GetBlipCoords(waypoint);
             return waypoint > 0;
         }
+
+        public float GetDistance(Vector3 v1, Vector3 v2) => GetDistanceBetweenCoords(v1.X, v1.Y, v1.Z, v2.X, v2.Y, v2.Z, true);
     }
 }
