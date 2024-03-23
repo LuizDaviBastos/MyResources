@@ -21,11 +21,17 @@ namespace CarDeliveryTruck.Client
 
             EventHandlers["onClientResourceStart"] += new Action<string>(async (resourceName) =>
             {
+                Tick += OnTick;
                 if (GetCurrentResourceName() == resourceName)
                 {
                     RegisterCommand("opendoor", new Action<int, List<object>, string>((source, args, raw) =>
                     {
-                        VehiclesInTask.ForEach(x => x.Doors[VehicleDoorIndex.Hood].Open());
+                        VehiclesInTask.ForEach(x => { 
+                            x.Doors[VehicleDoorIndex.Hood].Open(); 
+                            API.SetVehicleDoorOpen(x.Handle, (int)VehicleDoorIndex.Trunk, false, false);  
+                        });
+                        Debug.WriteLine($"VehiclesInTask: {VehiclesInTask.Count}");
+                        
                     }), false);
 
                     RegisterCommand("truck", new Action<int, List<object>, string>( async (source, args, raw) =>
@@ -44,7 +50,7 @@ namespace CarDeliveryTruck.Client
                         }
                     }), false);
 
-                    RegisterCommand("clsvehicles", new Action<int, List<object>, string>(async (source, args, raw) =>
+                    RegisterCommand("cls", new Action<int, List<object>, string>(async (source, args, raw) =>
                     {
                         VehiclesInTask = new List<Vehicle>();
                         World.GetAllVehicles().Where(x => Vector3.Distance(x.Position, Game.PlayerPed.Position) < 100).ToList().ForEach((Vehicle vehicle) => 
@@ -57,7 +63,6 @@ namespace CarDeliveryTruck.Client
             });
         }
 
-        [Tick]
         public async Task OnTick()
         {
             if(VehiclesInTask.Any())
