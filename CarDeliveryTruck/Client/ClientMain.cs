@@ -26,9 +26,10 @@ namespace CarDeliveryTruck.Client
                 {
                     RegisterCommand("opendoor", new Action<int, List<object>, string>((source, args, raw) =>
                     {
-                        VehiclesInTask.ForEach(x => { 
+                        VehiclesInTask.ForEach(x => {
+                            DecorSetInt(x.Handle, "flatbed3_state", 4);
                             x.Doors[VehicleDoorIndex.Hood].Open(); 
-                            API.SetVehicleDoorOpen(x.Handle, (int)VehicleDoorIndex.Trunk, false, false);  
+                            API.SetVehicleDoorOpen(x.Handle, (int)VehicleDoorIndex.Trunk, false, false);
                         });
                         Debug.WriteLine($"VehiclesInTask: {VehiclesInTask.Count}");
                         
@@ -39,11 +40,10 @@ namespace CarDeliveryTruck.Client
                         var vehicles = await SpawnTruck(args.Count > 0 ? args[0]?.ToString() : "");
                         var driver = await World.CreatePed(PedHash.PrologueHostage01, vehicles.Key.Position, vehicles.Key.Heading);
                         driver.SetIntoVehicle(vehicles.Key, VehicleSeat.Driver);
+                        VehiclesInTask.Add(vehicles.Key);
                         if (GetWaypointCoords(out Vector3 coords))
                         {
                             TaskVehicleDriveToCoordLongrange(driver.Handle, vehicles.Key.Handle, coords.X, coords.Y, coords.Z, 10, 1, 30);
-                            VehiclesInTask.Add(vehicles.Key);
-
                             var blip = AddBlipForEntity(vehicles.Key.Handle);
                             SetBlipDisplay(blip, (int)BlipSprite.GarbageTruck);
                             SetBlipFriend(blip, true);
