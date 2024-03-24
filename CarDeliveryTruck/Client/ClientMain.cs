@@ -13,7 +13,7 @@ namespace CarDeliveryTruck.Client
         public List<Vehicle> VehiclesInTask { get; set; } = new List<Vehicle>();
         public Vector3 From = new Vector3(2133.2f, 4783.3f, 40.9f);
         public Vector3 To = new Vector3(2133.2f, 4783.3f, 40.9f);
-
+        public Ped Driver { get; set; }
         public ClientMain()
         {
             Debug.WriteLine("Hi from CarDeliveryTruck.Client!");
@@ -28,6 +28,8 @@ namespace CarDeliveryTruck.Client
                     {
                         VehiclesInTask.ForEach(x => {
                             DecorSetInt(x.Handle, "flatbed3_state", 4);
+                            TriggerEvent("open:rampa", Driver.Handle);
+
                             x.Doors[VehicleDoorIndex.Hood].Open(); 
                             API.SetVehicleDoorOpen(x.Handle, (int)VehicleDoorIndex.Trunk, false, false);
                         });
@@ -38,12 +40,12 @@ namespace CarDeliveryTruck.Client
                     RegisterCommand("truck", new Action<int, List<object>, string>( async (source, args, raw) =>
                     {
                         var vehicles = await SpawnTruck(args.Count > 0 ? args[0]?.ToString() : "");
-                        var driver = await World.CreatePed(PedHash.PrologueHostage01, vehicles.Key.Position, vehicles.Key.Heading);
-                        driver.SetIntoVehicle(vehicles.Key, VehicleSeat.Driver);
+                        Driver = await World.CreatePed(PedHash.PrologueHostage01, vehicles.Key.Position, vehicles.Key.Heading);
+                        Driver.SetIntoVehicle(vehicles.Key, VehicleSeat.Driver);
                         VehiclesInTask.Add(vehicles.Key);
                         if (GetWaypointCoords(out Vector3 coords))
                         {
-                            TaskVehicleDriveToCoordLongrange(driver.Handle, vehicles.Key.Handle, coords.X, coords.Y, coords.Z, 10, 1, 30);
+                            TaskVehicleDriveToCoordLongrange(Driver.Handle, vehicles.Key.Handle, coords.X, coords.Y, coords.Z, 10, 1, 30);
                             var blip = AddBlipForEntity(vehicles.Key.Handle);
                             SetBlipDisplay(blip, (int)BlipSprite.GarbageTruck);
                             SetBlipFriend(blip, true);
