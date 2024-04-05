@@ -120,7 +120,7 @@ namespace CarDeliveryTruck.Client
             {
                 Car = VehToNet(veh.Handle);
 
-                if (HasModelLoaded(new Model("inm_flatbed_base")))
+                if (!HasModelLoaded(new Model("inm_flatbed_base")))
                 {
                     RequestModel(new Model("inm_flatbed_base"));
                 }
