@@ -10,6 +10,8 @@ namespace CarDeliveryTruck.Client
         public static void DrawText3D(Vector3 vector3, string text)
         {
             DrawText3D(vector3.X, vector3.Y, vector3.Z, text);
+            DecorSetInt(1, "", VehToNet(1));
+                
         }
 
         public static void DrawText3D(float x, float y, float z, string text)
