@@ -118,7 +118,7 @@ namespace CarDeliveryTruck.Client
 
             if (name == "flatbed3")
             {
-                Car = VehToNet(veh.Handle);
+                Car = VehToNet(veh2.Handle);
 
                 if (!HasModelLoaded(new Model("inm_flatbed_base")))
                 {
@@ -132,12 +132,11 @@ namespace CarDeliveryTruck.Client
                 var bed = CreateObjectNoOffset(new Model("inm_flatbed_base"), pos.X, pos.Y, pos.Z, true, false, false);
                 var bedEntity = Entity.FromHandle(bed);
                 bedEntity.AttachTo(veh, new Vector3(0, -3.5f, 0.4f));
-                //log("GENERATING BED")
+
                 if (DoesEntityExist(bed))
                 {
                     bedNet = ObjToNet(bed);
                     DecorSetInt(veh.Handle, "flatbed3_bed", bedNet);
-                    //log("DONE GENERATING BED")
                 }
 
                 veh2.AttachTo(bedEntity, new Vector3(0, 2, 0.7f));
