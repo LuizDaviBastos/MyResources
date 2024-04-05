@@ -84,5 +84,15 @@ namespace CarDeliveryTruck.Client
             Debug.WriteLine($"Nova posição relativa: {relativePosition}");
             return relativePosition;
         }
+
+        public static float GetDistance(Vector3 v1, Vector3 v2)
+        {
+            return Vector2.Distance(new Vector2(Convert.ToInt32(v1.X), Convert.ToInt32(v1.Y)), new Vector2(Convert.ToInt32(v2.X), Convert.ToInt32(v2.Y)));
+        }
+
+        public static void UnlockDoors(Vehicle vehicle)
+        {
+            vehicle.LockStatus = VehicleLockStatus.Unlocked;
+        }
     }
 }
